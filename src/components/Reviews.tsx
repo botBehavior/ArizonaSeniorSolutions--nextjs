@@ -144,10 +144,14 @@ export default function Reviews() {
                           </div>
 
                           {/* Review Text */}
-                          <div className="flex-grow relative z-10 mb-6 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pr-2">
-                            <blockquote className="text-gray-700 leading-relaxed italic">
-                              &ldquo;{review.text}&rdquo;
-                            </blockquote>
+                          <div className="flex-grow relative z-10 mb-6 min-h-0">
+                            <div className={`overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pr-2 ${
+                              review.text.length > 300 ? 'max-h-32' : 'max-h-40'
+                            }`}>
+                              <blockquote className="text-gray-700 leading-relaxed italic">
+                                &ldquo;{review.text}&rdquo;
+                              </blockquote>
+                            </div>
                           </div>
 
                           {/* Author Info */}
