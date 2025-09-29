@@ -11,7 +11,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import Autoplay from "embla-carousel-autoplay"
 import { fallbackReviews, SharedReview } from "@/data/reviews"
 
@@ -21,7 +20,6 @@ export default function Reviews() {
   const [reviews, setReviews] = useState<Review[]>(fallbackReviews)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set())
 
   const plugin = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true })
@@ -146,41 +144,10 @@ export default function Reviews() {
                           </div>
 
                           {/* Review Text */}
-                          <div className="flex-grow relative z-10 mb-6">
-                            {(() => {
-                              const isExpanded = expandedReviews.has(review.name)
-                              const maxLength = 250
-                              const shouldTruncate = review.text.length > maxLength
-                              const displayText = shouldTruncate && !isExpanded
-                                ? review.text.substring(0, maxLength).trim() + "..."
-                                : review.text
-
-                              return (
-                                <>
-                                  <blockquote className="text-gray-700 leading-relaxed italic mb-2">
-                                    &ldquo;{displayText}&rdquo;
-                                  </blockquote>
-                                  {shouldTruncate && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        const newExpanded = new Set(expandedReviews)
-                                        if (isExpanded) {
-                                          newExpanded.delete(review.name)
-                                        } else {
-                                          newExpanded.add(review.name)
-                                        }
-                                        setExpandedReviews(newExpanded)
-                                      }}
-                                      className="text-primary hover:text-primary/80 text-sm p-0 h-auto font-medium"
-                                    >
-                                      {isExpanded ? "Show Less" : "Show More"}
-                                    </Button>
-                                  )}
-                                </>
-                              )
-                            })()}
+                          <div className="flex-grow relative z-10 mb-6 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pr-2">
+                            <blockquote className="text-gray-700 leading-relaxed italic">
+                              &ldquo;{review.text}&rdquo;
+                            </blockquote>
                           </div>
 
                           {/* Author Info */}
