@@ -212,8 +212,6 @@ export default function MapDashboard() {
 
       return true
     })
-
-    return result
   }, [facilitiesList, nearbyFacilities, searchTerm, advancedFilters])
 
   useEffect(() => {
