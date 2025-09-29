@@ -145,9 +145,9 @@ export default function Reviews() {
 
                           {/* Review Text */}
                           <div className="flex-grow relative z-10 mb-6 min-h-0">
-                            <div className={`overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pr-2 ${
-                              review.text.length > 300 ? 'max-h-32' : 'max-h-40'
-                            }`}>
+                            <div className={`overflow-y-auto pr-2 ${
+                              review.text.length > 300 ? 'max-h-36' : 'max-h-44'
+                            }`} style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}>
                               <blockquote className="text-gray-700 leading-relaxed italic">
                                 &ldquo;{review.text}&rdquo;
                               </blockquote>
