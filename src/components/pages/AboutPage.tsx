@@ -189,6 +189,10 @@ export default function AboutPage() {
                       <span className="font-bold text-blue-600">E</span>xpert
                     </p>
                   </div>
+
+                  <p className="text-sm font-semibold tracking-widest text-blue-600 uppercase mb-6">
+                    CDC&reg; Certified · B.A.
+                  </p>
                   
                   <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-8"></div>
                   

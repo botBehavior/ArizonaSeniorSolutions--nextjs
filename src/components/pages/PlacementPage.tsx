@@ -80,9 +80,9 @@ export default function PlacementPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/50"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
         <div className="relative z-10 container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
             <motion.h1 
-              className="text-4xl lg:text-6xl font-bold mb-8"
+              className="text-4xl lg:text-6xl font-bold"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -96,57 +96,14 @@ export default function PlacementPage() {
             </motion.h1>
             
             <motion.p 
-              className="text-lg md:text-xl text-white mb-8 leading-relaxed max-w-3xl mx-auto"
+              className="text-lg md:text-xl text-white leading-relaxed max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               Our comprehensive placement process ensures your loved one finds the perfect senior living community. 
-              With over 13 years of experience, we guide you through every step with personalized care and expertise.
+              With over 15 years of experience, we guide you through every step with personalized care and expertise.
             </motion.p>
-            
-            <div className="grid md:grid-cols-2 gap-8 mt-12">
-              <Card className="glass-brand-opaque border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-bold text-gray-900">
-                    About the Placement Process
-                  </CardTitle>
-                  <div className="w-16 h-1 bg-gradient-to-r from-brand-blue-primary to-brand-blue-primary-dark mx-auto rounded-full"></div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <p className="text-gray-900 leading-relaxed text-center font-medium">
-                    We understand that finding the right senior living option can be overwhelming. 
-                    Our experienced team guides you through every step of the placement process, 
-                    ensuring your loved one finds the perfect care environment.
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="glass-brand-opaque border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-bold text-gray-900">
-                    How We Help
-                  </CardTitle>
-                  <div className="w-16 h-1 bg-gradient-to-r from-secondary to-secondary/80 mx-auto rounded-full"></div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3 text-yellow-500">⭐</span>
-                      <span className="text-gray-700 font-medium">AT NO COST TO YOU</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3 text-blue-500">📞</span>
-                      <span className="text-gray-700">You contact Senior CARE Solutions</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3 text-green-500">✨</span>
-                      <span className="text-gray-700">We take care of the rest, giving you peace of mind</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </motion.section>

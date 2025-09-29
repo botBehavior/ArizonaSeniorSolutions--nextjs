@@ -10,6 +10,8 @@ import HomePage from "@/components/pages/HomePage"
 import AboutPage from "@/components/pages/AboutPage"
 import ContactPage from "@/components/pages/ContactPage"
 import PlacementPage from "@/components/pages/PlacementPage"
+import DisclosurePage from "@/components/pages/DisclosurePage"
+import PrivacyPage from "@/components/pages/PrivacyPage"
 
 export default function SPA() {
   const { currentPage, isLoading } = useNavigation()
@@ -29,13 +31,9 @@ export default function SPA() {
       case 'contact':
         return <ContactPage />
       case 'privacy':
-        return <div className="min-h-screen flex items-center justify-center">
-          <h1 className="text-4xl">Privacy Page - Coming Soon</h1>
-        </div>
+        return <PrivacyPage />
       case 'disclosure':
-        return <div className="min-h-screen flex items-center justify-center">
-          <h1 className="text-4xl">Disclosure Page - Coming Soon</h1>
-        </div>
+        return <DisclosurePage />
       default:
         return <HomePage />
     }

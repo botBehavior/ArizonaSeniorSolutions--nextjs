@@ -45,28 +45,28 @@ export default function Navbar() {
       <motion.div 
         initial={{ y: -50 }}
         animate={{ y: 0 }}
-        className="gradient-primary text-white py-3 px-4 relative overflow-hidden"
+        className="gradient-primary text-white py-3 px-4 relative overflow-hidden shadow-md"
       >
-        <div className="absolute inset-0 bg-white/5"></div>
+        <div className="absolute inset-0 bg-black/20"></div>
         <div className="container mx-auto flex items-center justify-center relative z-10">
           <motion.a 
             href="tel:602-565-6101" 
-            className="flex items-center gap-2 text-sm md:text-base font-medium hover:text-white/90 transition-all duration-300 group"
+            className="group flex items-center gap-3 text-sm md:text-base font-semibold px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/15 focus-visible-ring transition-all duration-300"
             whileHover={{ scale: 1.02 }}
           >
             <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
+              animate={{ scale: [1, 1.15, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="relative"
+              className="relative flex items-center justify-center"
             >
-              <Phone className="h-4 w-4" />
-              <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
+              <Phone className="h-4 w-4 text-white" />
+              <div className="absolute inset-0 rounded-full bg-white/40 opacity-70 blur-[2px]"></div>
             </motion.div>
-            <span className="trust-badge bg-white/25 text-white border-white/40 font-semibold">
-              <Heart className="h-3 w-3" aria-hidden="true" />
-              100% FREE Service
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/50 bg-black/30 px-3 py-1 text-xs sm:text-sm font-semibold uppercase tracking-wide">
+              <Heart className="h-3 w-3 text-white" aria-hidden="true" />
+              100% Free Service
             </span>
-            <span className="hidden sm:inline">- Call 602-565-6101 Today</span>
+            <span className="hidden sm:inline text-white/90">Call 602-565-6101 Today</span>
           </motion.a>
         </div>
       </motion.div>

@@ -1,7 +1,7 @@
 "use client"
 
-import React from "react"
-import { Star, Quote } from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { Star, Quote, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import {
   Carousel,
@@ -13,34 +13,76 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import Autoplay from "embla-carousel-autoplay"
 
-const reviews = [
+interface Review {
+  name: string
+  rating: number
+  text: string
+  location: string
+  relationship: string
+  time?: number
+}
+
+// Fallback reviews for when API fails
+const fallbackReviews: Review[] = [
   {
     name: "Robert L.",
     rating: 5,
     text: "CaroleLynne is the perfect advocate for finding placement for you and or your beloved family member. She has years of experience helping families bringing a multitude of success stories finding the right match for the needs at hand. You can't go wrong with Senior Care Solutions of Arizona.",
     location: "Phoenix, AZ",
-    relationship: "Family Member"
+    relationship: "Family Member",
+    time: Date.now() - 86400000 * 30
   },
   {
-    name: "Len B.", 
+    name: "Len B.",
     rating: 5,
     text: "CaroleLynne was a tremendous help to our family when we needed to get my mother into a care facility. Senior Care Solutions of AZ provided us with answers and suggestions that we needed to make good decisions. I highly recommend asking CaroleLynne for assistance when caring for your loved one.",
     location: "Scottsdale, AZ",
-    relationship: "Son"
+    relationship: "Son",
+    time: Date.now() - 86400000 * 45
   },
   {
     name: "Sharin D.",
     rating: 5,
     text: "As a SNF case manager, I have worked with Carol-Lynne for years. I have seen her work tirelessly to find safe placement for many patients. I can always count on her to do what's right for her clients regardless of the time spent or the compensation. Her work ethic and kindness is a rarity in todays world.",
     location: "Tempe, AZ",
-    relationship: "Healthcare Professional"
+    relationship: "Healthcare Professional",
+    time: Date.now() - 86400000 * 60
   }
 ]
 
 export default function Reviews() {
+  const [reviews, setReviews] = useState<Review[]>(fallbackReviews)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const plugin = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true })
   )
+
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const response = await fetch('/api/google-reviews')
+        const data = await response.json()
+
+        if (data.success && data.reviews) {
+          setReviews(data.reviews)
+        } else {
+          // Use fallback reviews if API fails
+          setReviews(fallbackReviews)
+        }
+      } catch (err) {
+        console.error('Failed to fetch reviews:', err)
+        setError('Failed to load reviews')
+        // Use fallback reviews
+        setReviews(fallbackReviews)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReviews()
+  }, [])
 
   return (
     <section className="py-20 bg-gradient-to-b from-accent to-white relative overflow-hidden" aria-labelledby="reviews-heading">
@@ -69,82 +111,102 @@ export default function Reviews() {
         </motion.div>
         
         <div className="max-w-6xl mx-auto">
-          <Carousel
-            plugins={[plugin.current]}
-            className="w-full"
-            onMouseEnter={plugin.current.stop}
-            onMouseLeave={plugin.current.reset}
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-          >
-            <CarouselContent>
-              {reviews.map((review, index) => (
-                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                  <motion.div 
-                    className="p-4 h-full"
-                    whileHover={{ y: -8 }}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <Card className="h-full shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden group">
-                      <CardContent className="p-8 text-center h-full flex flex-col relative">
-                        {/* Hover background */}
-                        <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
-                        
-                        {/* Quote Icon */}
-                        <div className="mb-6 relative z-10">
-                          <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
-                            <Quote className="h-6 w-6 text-white" />
-                          </div>
-                        </div>
-                        
-                        {/* Rating */}
-                        <div className="flex items-center justify-center gap-1 mb-6 relative z-10">
-                          {[...Array(review.rating)].map((_, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ delay: i * 0.1, duration: 0.2 }}
-                            >
-                              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            </motion.div>
-                          ))}
-                        </div>
-                        
-                        {/* Review Text */}
-                        <blockquote className="text-gray-700 leading-relaxed mb-6 flex-grow relative z-10 italic">
-                          &ldquo;{review.text}&rdquo;
-                        </blockquote>
-                        
-                        {/* Author Info */}
-                        <div className="mt-auto relative z-10">
-                          <div className="w-16 h-px bg-border mx-auto mb-4" />
-                          <div className="font-semibold text-foreground text-lg mb-1">{review.name}</div>
-                          <div className="text-sm text-primary font-medium mb-1">{review.relationship}</div>
-                          <div className="text-xs text-muted-foreground">{review.location}</div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <CarouselPrevious 
-                className="static translate-y-0 hover:bg-primary hover:text-white transition-colors accessible-button" 
-                aria-label="Previous review"
-              />
-              <CarouselNext 
-                className="static translate-y-0 hover:bg-primary hover:text-white transition-colors accessible-button"
-                aria-label="Next review" 
-              />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Card className="p-8 glass-brand-light shadow-xl">
+                <div className="flex items-center gap-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="text-muted-foreground">Loading reviews...</span>
+                </div>
+              </Card>
             </div>
-          </Carousel>
+          ) : error ? (
+            <div className="flex items-center justify-center py-16">
+              <Card className="p-8 glass-brand-light shadow-xl border-red-200">
+                <div className="text-center text-red-600">
+                  <p className="font-medium mb-2">Unable to load reviews</p>
+                  <p className="text-sm text-red-500">Showing our featured testimonials</p>
+                </div>
+              </Card>
+            </div>
+          ) : (
+            <Carousel
+              plugins={[plugin.current]}
+              className="w-full"
+              onMouseEnter={plugin.current.stop}
+              onMouseLeave={plugin.current.reset}
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+            >
+              <CarouselContent>
+                {reviews.map((review, index) => (
+                  <CarouselItem key={`${review.name}-${index}`} className="md:basis-1/2 lg:basis-1/3">
+                    <motion.div
+                      className="p-4 h-full"
+                      whileHover={{ y: -8 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <Card className="h-full shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden group">
+                        <CardContent className="p-8 text-center h-full flex flex-col relative">
+                          {/* Hover background */}
+                          <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+
+                          {/* Quote Icon */}
+                          <div className="mb-6 relative z-10">
+                            <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
+                              <Quote className="h-6 w-6 text-white" />
+                            </div>
+                          </div>
+
+                          {/* Rating */}
+                          <div className="flex items-center justify-center gap-1 mb-6 relative z-10">
+                            {[...Array(review.rating)].map((_, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: i * 0.1, duration: 0.2 }}
+                              >
+                                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                              </motion.div>
+                            ))}
+                          </div>
+
+                          {/* Review Text */}
+                          <blockquote className="text-gray-700 leading-relaxed mb-6 flex-grow relative z-10 italic">
+                            &ldquo;{review.text}&rdquo;
+                          </blockquote>
+
+                          {/* Author Info */}
+                          <div className="mt-auto relative z-10">
+                            <div className="w-16 h-px bg-border mx-auto mb-4" />
+                            <div className="font-semibold text-foreground text-lg mb-1">{review.name}</div>
+                            <div className="text-sm text-primary font-medium mb-1">{review.relationship}</div>
+                            <div className="text-xs text-muted-foreground">{review.location}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <CarouselPrevious
+                  className="static translate-y-0 hover:bg-primary hover:text-white transition-colors accessible-button"
+                  aria-label="Previous review"
+                />
+                <CarouselNext
+                  className="static translate-y-0 hover:bg-primary hover:text-white transition-colors accessible-button"
+                  aria-label="Next review"
+                />
+              </div>
+            </Carousel>
+          )}
         </div>
         
         {/* Trust indicators */}
@@ -179,7 +241,7 @@ export default function Reviews() {
             </div>
             <div className="trust-badge">
               <Quote className="h-4 w-4" />
-              13+ Years Experience
+              15+ Years Experience
             </div>
           </div>
         </motion.div>

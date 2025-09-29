@@ -23,7 +23,22 @@ export function useFacilities() {
       setFacilities(data.facilities || [])
     } catch (err) {
       console.error('Error fetching facilities:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load facilities')
+
+      let errorMessage = 'Failed to load facilities'
+
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          errorMessage = 'Unable to connect to the facility database. Please check your internet connection and try again.'
+        } else if (err.message.includes('500')) {
+          errorMessage = 'Server error while loading facilities. The data source may be temporarily unavailable.'
+        } else if (err.message.includes('404')) {
+          errorMessage = 'Facility data source not found. Please contact support.'
+        } else {
+          errorMessage = err.message
+        }
+      }
+
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

@@ -138,18 +138,19 @@ export default function MapView({
         script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`
         script.async = true
         script.defer = true
-        
+
         script.onload = () => {
           createMap()
         }
-        
+
         script.onerror = () => {
           setError('Failed to load Google Maps')
           setIsLoading(false)
         }
-        
+
         document.head.appendChild(script)
-      } catch {
+      } catch (err) {
+        console.error('Error initializing map:', err)
         setError('Error initializing map')
         setIsLoading(false)
       }
@@ -338,14 +339,26 @@ export default function MapView({
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-800/50 backdrop-blur-sm">
-        <div className="text-center text-white">
-          <MapPin className="w-12 h-12 mx-auto mb-3 text-red-400" />
-          <p className="text-lg font-medium mb-2">Map Error</p>
-          <p className="text-sm text-white/60">{error}</p>
-          <p className="text-xs text-white/40 mt-2">
-            Make sure Google Maps API key is configured
+      <div className="h-full flex items-center justify-center bg-slate-800/50 backdrop-blur-sm p-6">
+        <div className="text-center text-white max-w-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
+            <MapPin className="w-8 h-8 text-red-400" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Map Unavailable</h3>
+          <p className="text-white/70 mb-4 leading-relaxed">
+            {error.includes('Google Maps')
+              ? 'Google Maps could not be loaded. Please check your internet connection and API configuration.'
+              : 'An error occurred while loading the map. This might be temporary.'
+            }
           </p>
+          <div className="bg-black/20 p-3 rounded text-sm text-white/60 mb-4">
+            <strong>Error:</strong> {error}
+          </div>
+          <div className="space-y-2 text-xs text-white/50">
+            <p>• Check your internet connection</p>
+            <p>• Verify Google Maps API key is configured</p>
+            <p>• Try refreshing the page</p>
+          </div>
         </div>
       </div>
     )
@@ -356,8 +369,16 @@ export default function MapView({
       {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-800/50 backdrop-blur-sm">
           <div className="text-center text-white">
-            <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
-            <p>Loading map...</p>
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500/20 rounded-full mb-4">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Loading Map</h3>
+            <p className="text-white/70 text-sm">Initializing Google Maps and facility markers...</p>
+            <div className="mt-4 space-y-1 text-xs text-white/50">
+              <p>• Connecting to Google Maps</p>
+              <p>• Loading facility data</p>
+              <p>• Setting up interactive markers</p>
+            </div>
           </div>
         </div>
       )}

@@ -24,7 +24,7 @@ const steps = [
   },
   { 
     title: "Expert Guidance", 
-    description: "Personalized recommendations based on 13+ years experience",
+    description: "Personalized recommendations backed by 15+ years of experience",
     icon: Award,
     completed: true 
   },
@@ -46,14 +46,14 @@ const stats = [
   { number: "15+", label: "Years Experience", icon: Award },
   { number: "500+", label: "Successful Placements", icon: Users },
   { number: "100%", label: "Free Service", icon: Heart },
-  { number: "7", label: "Days Average Placement", icon: Clock },
+  { number: "5", label: "Day Placement Average", icon: Clock },
 ]
 
 const trustFeatures = [
   {
     icon: Shield,
-    title: "Licensed & Insured",
-    description: "Fully licensed senior care placement specialists"
+    title: "Vetted Network",
+    description: "Every recommended community is pre-screened for safety and quality"
   },
   {
     icon: Heart,
@@ -63,7 +63,7 @@ const trustFeatures = [
   {
     icon: Clock,
     title: "Quick Placement",
-    description: "Most placements completed within one week"
+    description: "Most placements completed within five days"
   }
 ]
 
@@ -399,7 +399,7 @@ export default function HomePage() {
                       title: "Personalized Recommendations",
                       content: (
                         <div className="space-y-4">
-                          <p className="text-muted-foreground">Based on our 13+ years of experience, we provide:</p>
+                          <p className="text-muted-foreground">Based on our 15+ years of experience, we provide:</p>
                           <ul className="space-y-2">
                             <li className="flex items-start gap-2">
                               <CheckCircle className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
@@ -446,7 +446,7 @@ export default function HomePage() {
                     }
                   ].map((item) => (
                     <AccordionItem key={item.id} value={item.id} className="border-border">
-                      <AccordionTrigger className="text-xl font-semibold hover:text-primary transition-colors">
+                      <AccordionTrigger className="text-xl font-semibold text-foreground">
                         {item.title}
                       </AccordionTrigger>
                       <AccordionContent className="leading-relaxed">
