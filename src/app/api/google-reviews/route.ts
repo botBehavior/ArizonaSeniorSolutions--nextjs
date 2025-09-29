@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { fallbackReviews, SharedReview } from '@/data/reviews'
 
 interface GoogleReview {
   author_name: string
@@ -18,46 +19,11 @@ interface GooglePlaceDetails {
   }
 }
 
-interface TransformedReview {
-  name: string
-  rating: number
-  text: string
-  location: string
-  relationship: string
-  time: number
-}
+type TransformedReview = SharedReview
 
 // Google Places API configuration
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY
 const PLACE_ID = process.env.GOOGLE_PLACE_ID // You'll need to set this in your environment
-
-// Fallback reviews for when API fails or during development
-const fallbackReviews: TransformedReview[] = [
-  {
-    name: "Robert L.",
-    rating: 5,
-    text: "CaroleLynne is the perfect advocate for finding placement for you and or your beloved family member. She has years of experience helping families bringing a multitude of success stories finding the right match for the needs at hand. You can't go wrong with Senior Care Solutions of Arizona.",
-    location: "Phoenix, AZ",
-    relationship: "Family Member",
-    time: Date.now() - 86400000 * 30 // 30 days ago
-  },
-  {
-    name: "Len B.",
-    rating: 5,
-    text: "CaroleLynne was a tremendous help to our family when we needed to get my mother into a care facility. Senior Care Solutions of AZ provided us with answers and suggestions that we needed to make good decisions. I highly recommend asking CaroleLynne for assistance when caring for your loved one.",
-    location: "Scottsdale, AZ",
-    relationship: "Son",
-    time: Date.now() - 86400000 * 45 // 45 days ago
-  },
-  {
-    name: "Sharin D.",
-    rating: 5,
-    text: "As a SNF case manager, I have worked with Carol-Lynne for years. I have seen her work tirelessly to find safe placement for many patients. I can always count on her to do what's right for her clients regardless of the time spent or the compensation. Her work ethic and kindness is a rarity in todays world.",
-    location: "Tempe, AZ",
-    relationship: "Healthcare Professional",
-    time: Date.now() - 86400000 * 60 // 60 days ago
-  }
-]
 
 // Transform Google review data to match our component structure
 function transformGoogleReview(review: GoogleReview): TransformedReview {
