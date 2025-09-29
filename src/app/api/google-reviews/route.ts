@@ -73,7 +73,7 @@ function transformGoogleReview(review: GoogleReview): TransformedReview {
   }
 
   // Determine relationship type based on review content
-  const determineRelationship = (text: string, authorName: string): string => {
+  const determineRelationship = (text: string): string => {
     const lowerText = text.toLowerCase()
 
     if (lowerText.includes('case manager') || lowerText.includes('healthcare') || lowerText.includes('professional')) {
@@ -92,7 +92,7 @@ function transformGoogleReview(review: GoogleReview): TransformedReview {
     rating: review.rating,
     text: review.text,
     location: extractLocation(review.text),
-    relationship: determineRelationship(review.text, review.author_name),
+    relationship: determineRelationship(review.text),
     time: review.time * 1000 // Convert to milliseconds
   }
 }
