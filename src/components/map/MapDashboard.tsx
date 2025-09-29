@@ -21,14 +21,6 @@ type FacilityWithMetrics = Facility & { distance?: number; driveTime?: number }
 
 type SidebarTab = 'facilities' | 'tour'
 
-const FACILITY_TYPE_OPTIONS = [
-  'memory care',
-  'assisted living home',
-  'assisted living center',
-  'independent living',
-]
-
-
 const DEFAULT_ADVANCED_FILTERS: SearchFiltersState = {
   facilityType: '',
   city: '',

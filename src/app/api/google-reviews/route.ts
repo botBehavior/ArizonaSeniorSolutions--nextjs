@@ -61,11 +61,6 @@ const fallbackReviews: TransformedReview[] = [
 
 // Transform Google review data to match our component structure
 function transformGoogleReview(review: GoogleReview): TransformedReview {
-  // Map review data to our expected format
-  const relationshipMap: Record<string, string> = {
-    default: "Family Member"
-  }
-
   // Extract location from review text or use default
   const extractLocation = (text: string): string => {
     const cities = ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale', 'Peoria']
@@ -80,7 +75,6 @@ function transformGoogleReview(review: GoogleReview): TransformedReview {
   // Determine relationship type based on review content
   const determineRelationship = (text: string, authorName: string): string => {
     const lowerText = text.toLowerCase()
-    const lowerName = authorName.toLowerCase()
 
     if (lowerText.includes('case manager') || lowerText.includes('healthcare') || lowerText.includes('professional')) {
       return "Healthcare Professional"

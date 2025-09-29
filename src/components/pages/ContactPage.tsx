@@ -348,7 +348,7 @@ export default function ContactPage() {
                       <Alert className="border-green-200 bg-green-50/80 backdrop-blur-sm">
                         <CheckCircle className="h-4 w-4 text-green-600" />
                         <AlertDescription className="text-green-800 font-medium">
-                          Thank you! Your {formType === 'contact' ? 'message' : 'feedback'} has been sent successfully. We'll get back to you within 24 hours.
+                          Thank you! Your {formType === 'contact' ? 'message' : 'feedback'} has been sent successfully. We&apos;ll get back to you within 24 hours.
                         </AlertDescription>
                       </Alert>
                     </motion.div>
