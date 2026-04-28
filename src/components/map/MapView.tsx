@@ -3,26 +3,58 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Loader2, MapPin } from 'lucide-react'
+import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import type { Facility } from '@/types/facility'
 
+const FIT_BOUNDS_MAX_MARKERS = 50
 
 interface MapViewProps {
   facilities: Facility[]
   selectedFacility: Facility | null
   onFacilitySelect: (facility: Facility) => void
   clientLocation?: string
+  clientCoords?: { lat: number; lng: number } | null
 }
 
-export default function MapView({ 
-  facilities, 
-  selectedFacility, 
-  onFacilitySelect
+function getFacilityColor(type: string): string {
+  const t = (type || '').toLowerCase()
+  if (t.includes('memory care')) return '#9333ea'
+  if (t.includes('assisted living home')) return '#3b82f6'
+  if (t.includes('assisted living center')) return '#10b981'
+  if (t.includes('independent living')) return '#f59e0b'
+  return '#6b7280'
+}
+
+function buildMarkerIcon(type: string, isSelected: boolean): google.maps.Symbol {
+  return {
+    path: 'M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z',
+    fillColor: isSelected ? '#ff6b6b' : getFacilityColor(type),
+    fillOpacity: 1,
+    strokeColor: '#ffffff',
+    strokeWeight: 3,
+    scale: isSelected ? 2.2 : 1.8,
+    anchor: new window.google.maps.Point(12, 24),
+  }
+}
+
+export default function MapView({
+  facilities,
+  selectedFacility,
+  onFacilitySelect,
+  clientCoords,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([])
+  const markersById = useRef<Map<string, google.maps.Marker>>(new Map())
+  const clustererRef = useRef<MarkerClusterer | null>(null)
+  const sharedInfoWindow = useRef<google.maps.InfoWindow | null>(null)
+  const onFacilitySelectRef = useRef(onFacilitySelect)
+  const selectedIdRef = useRef<string | null>(null)
+  const lastRecenteredAtRef = useRef<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => { onFacilitySelectRef.current = onFacilitySelect }, [onFacilitySelect])
 
   // Fallback coordinates for when geocoding is unavailable (client-side fallback)
   const getFallbackCoordinates = useCallback((city: string, zip: string) => {
@@ -242,62 +274,47 @@ export default function MapView({
 
     initMap()
 
-    // Cleanup function
     return () => {
-      // Clean up markers when component unmounts
-      markers.forEach(marker => marker.setMap(null))
+      clustererRef.current?.clearMarkers()
+      markersById.current.forEach(m => m.setMap(null))
+      markersById.current.clear()
+      sharedInfoWindow.current?.close()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Update markers when facilities change
+  // Build/replace all markers when the facility list changes.
+  // Selection-style updates are handled in a separate effect so they don't rebuild markers.
   useEffect(() => {
     if (!map || !facilities) return
 
-    // Clear existing markers
-    markers.forEach(marker => marker.setMap(null))
-    
-    const newMarkers: google.maps.Marker[] = []
-    const bounds = new window.google.maps.LatLngBounds()
+    clustererRef.current?.clearMarkers()
+    markersById.current.forEach(m => m.setMap(null))
+    markersById.current.clear()
 
-    // Get facility type color function
-    const getFacilityColor = (type: string) => {
-      const lowerType = type.toLowerCase()
-      if (lowerType.includes('memory care')) return '#9333ea' // Purple
-      if (lowerType.includes('assisted living home')) return '#3b82f6' // Blue
-      if (lowerType.includes('assisted living center')) return '#10b981' // Green
-      if (lowerType.includes('independent living')) return '#f59e0b' // Yellow
-      return '#6b7280' // Gray default
+    if (!sharedInfoWindow.current) {
+      sharedInfoWindow.current = new window.google.maps.InfoWindow()
     }
 
-    facilities.forEach((facility) => {
-      // Get coordinates from geocoded facility data
-      const coords = getCoordinates(facility)
-      
-      const facilityColor = getFacilityColor(facility.facility_type)
-      const isSelected = selectedFacility?.id === facility.id
+    const bounds = new window.google.maps.LatLngBounds()
+    const newMarkers: google.maps.Marker[] = []
 
-      // Create custom marker with better visibility
+    facilities.forEach((facility) => {
+      const coords = getCoordinates(facility)
+      const isSelected = selectedIdRef.current === facility.id
+      const facilityColor = getFacilityColor(facility.facility_type)
+
       const marker = new window.google.maps.Marker({
         position: coords,
-        map: map,
         title: facility.name,
-        icon: {
-          path: 'M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z',
-          fillColor: isSelected ? '#ff6b6b' : facilityColor,
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 3,
-          scale: isSelected ? 2.2 : 1.8,
-          anchor: new window.google.maps.Point(12, 24)
-        },
+        icon: buildMarkerIcon(facility.facility_type, isSelected),
         zIndex: isSelected ? 1000 : 100,
-        animation: isSelected ? window.google.maps.Animation.BOUNCE : undefined
       })
 
-      // Add info window on hover
-      const infoWindow = new window.google.maps.InfoWindow({
-        content: `
+      marker.addListener('mouseover', () => {
+        const iw = sharedInfoWindow.current
+        if (!iw) return
+        iw.setContent(`
           <div style="color: #1f2937; font-family: system-ui; max-width: 250px;">
             <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${facility.name}</h3>
             <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280;">${facility.address}</p>
@@ -307,35 +324,75 @@ export default function MapView({
             </div>
             ${facility.geocoded === false ? '<div style="margin-top: 4px; font-size: 10px; color: #9ca3af;">⚠ Approximate location</div>' : ''}
           </div>
-        `
+        `)
+        iw.open(map, marker)
       })
-
-      marker.addListener('mouseover', () => {
-        infoWindow.open(map, marker)
-      })
-
-      marker.addListener('mouseout', () => {
-        infoWindow.close()
-      })
-
+      marker.addListener('mouseout', () => sharedInfoWindow.current?.close())
       marker.addListener('click', () => {
-        onFacilitySelect(facility)
-        // Smooth pan to marker
+        onFacilitySelectRef.current(facility)
         map.panTo(coords)
       })
 
+      markersById.current.set(facility.id, marker)
       newMarkers.push(marker)
       bounds.extend(coords)
     })
 
-    setMarkers(newMarkers)
-    
-    // Only fit bounds if we have facilities and this is the initial load
-    if (facilities.length > 0 && markers.length === 0) {
+    clustererRef.current = new MarkerClusterer({ map, markers: newMarkers })
+
+    if (facilities.length > 0 && facilities.length <= FIT_BOUNDS_MAX_MARKERS) {
       map.fitBounds(bounds)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, facilities, selectedFacility, onFacilitySelect, getCoordinates])
+  }, [map, facilities, getCoordinates])
+
+  // Recenter when the user picks a new location (typed ZIP/address or used GPS).
+  // Only fires when clientCoords actually changes — not when facilities update —
+  // so panning around the map and adding to a tour doesn't snap the view back.
+  useEffect(() => {
+    if (!map || !clientCoords) return
+    const key = `${clientCoords.lat.toFixed(5)},${clientCoords.lng.toFixed(5)}`
+    if (lastRecenteredAtRef.current === key) return
+    lastRecenteredAtRef.current = key
+
+    const bounds = new window.google.maps.LatLngBounds()
+    bounds.extend(clientCoords)
+    const nearestN = facilities.slice(0, 15)
+    nearestN.forEach((f) => bounds.extend(getCoordinates(f)))
+    if (nearestN.length === 0) {
+      map.setCenter(clientCoords)
+      map.setZoom(13)
+    } else {
+      map.fitBounds(bounds, 60)
+    }
+  }, [map, clientCoords, facilities, getCoordinates])
+
+  // Selection style: update only the previously-selected and newly-selected markers.
+  useEffect(() => {
+    const prevId = selectedIdRef.current
+    const nextId = selectedFacility?.id ?? null
+    if (prevId === nextId) return
+
+    if (prevId) {
+      const prev = markersById.current.get(prevId)
+      if (prev) {
+        const prevType = (prev.getTitle() && facilities.find(f => f.id === prevId)?.facility_type) || ''
+        prev.setIcon(buildMarkerIcon(prevType, false))
+        prev.setZIndex(100)
+        prev.setAnimation(null)
+      }
+    }
+    if (nextId) {
+      const next = markersById.current.get(nextId)
+      const nextFacility = facilities.find(f => f.id === nextId)
+      if (next && nextFacility) {
+        next.setIcon(buildMarkerIcon(nextFacility.facility_type, true))
+        next.setZIndex(1000)
+        next.setAnimation(window.google.maps.Animation.BOUNCE)
+      }
+    }
+    selectedIdRef.current = nextId
+  }, [selectedFacility, facilities])
 
   if (error) {
     return (

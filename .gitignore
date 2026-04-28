@@ -26,6 +26,13 @@ yarn-error.log*
 # Local env files
 .env*.local
 
+# Internal facility data (not for public repo)
+RESIDENTIAL_LIST.xlsx
+*.xlsx
+seed_import_*.csv
+/data/facilities.local.json
+.geocode-cache.json
+
 # Vercel
 .vercel
 

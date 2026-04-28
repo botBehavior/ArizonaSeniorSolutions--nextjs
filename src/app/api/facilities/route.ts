@@ -102,6 +102,28 @@ const SAMPLE_FACILITIES: Facility[] = [
 
 export async function GET() {
   try {
+    // Local development override: serve from a CSV on disk for at-scale testing
+    // before Carol imports into the live Sheet. Set FACILITIES_CSV_PATH in .env.local.
+    const localCsvPath = process.env.FACILITIES_CSV_PATH
+    if (localCsvPath) {
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+      const resolved = path.resolve(localCsvPath)
+      if (fs.existsSync(resolved)) {
+        const csvText = fs.readFileSync(resolved, 'utf8')
+        const rawFacilities = parseCSVToFacilities(csvText)
+        const facilities = await geocodeFacilities(rawFacilities)
+        return NextResponse.json({
+          facilities,
+          count: facilities.length,
+          lastUpdated: new Date().toISOString(),
+          geocodingStatus: 'completed',
+          source: 'local_csv',
+        })
+      }
+      console.warn(`FACILITIES_CSV_PATH set but file not found: ${resolved}; falling back to Sheet`)
+    }
+
     const response = await fetch(GOOGLE_SHEETS_CSV_URL, {
       cache: 'no-store', // Always fetch fresh data
     })
@@ -147,11 +169,33 @@ function parseCSVToFacilities(csvText: string): Facility[] {
   const lines = csvText.split('\n')
   if (lines.length < 2) return []
 
-  // Get headers from first line
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+  const headers = parseCSVLine(lines[0]).map(h => h.trim())
+  const headerIndex = (name: string) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase())
 
-  // Actual Google Sheet column order:
-  // Name, Address, City, Zip, Phone, Contact_Person, Facility_Type, Available_Beds, Price_Min, Price_Max, ALTCS_Accepted, Special_Services, Notes, Date_Added, Added_By
+  const colName = headerIndex('Name')
+  const colAddress = headerIndex('Address')
+  const colCity = headerIndex('City')
+  const colZip = headerIndex('Zip')
+  const colPhone = headerIndex('Phone')
+  const colContact = headerIndex('Contact_Person')
+  const colType = headerIndex('Facility_Type')
+  const colBeds = headerIndex('Available_Beds')
+  const colPriceMin = headerIndex('Price_Min')
+  const colPriceMax = headerIndex('Price_Max')
+  const colAltcs = headerIndex('ALTCS_Accepted')
+  const colServices = headerIndex('Special_Services')
+  const colNotes = headerIndex('Notes')
+  const colDateAdded = headerIndex('Date_Added')
+  const colAddedBy = headerIndex('Added_By')
+  const colLat = headerIndex('Latitude')
+  const colLng = headerIndex('Longitude')
+
+  const get = (values: string[], idx: number) => (idx >= 0 && idx < values.length ? values[idx] : '') || ''
+  const parseCoord = (raw: string): number | undefined => {
+    if (!raw) return undefined
+    const n = Number(raw.trim())
+    return Number.isFinite(n) ? n : undefined
+  }
 
   const facilities: Facility[] = []
 
@@ -160,41 +204,45 @@ function parseCSVToFacilities(csvText: string): Facility[] {
     if (!line) continue
 
     const values = parseCSVLine(line)
-    if (values.length < headers.length) continue
+    const name = get(values, colName).trim()
+    if (!name) continue
 
-    // Skip rows where required fields are empty
-    if (!values[0] || values[0].trim() === '') continue
+    const lat = parseCoord(get(values, colLat))
+    const lng = parseCoord(get(values, colLng))
 
-    const rawFacility = {
+    const rawFacility: Record<string, unknown> = {
       id: `facility-${i}`,
-      name: values[0] || '',
-      address: values[1] || '',  // Street address is in column 1
-      city: values[2] || '',     // City is in column 2
-      zip: values[3] || '',      // ZIP is in column 3
-      phone: values[4] || '',    // Phone is in column 4
-      contact_person: values[5] || '', // Contact person is in column 5
-      facility_type: values[6] || '', // Facility type is in column 6
-      available_beds: values[7] || '', // Available beds is in column 7
-      price_min: values[8] || '', // Price min is in column 8
-      price_max: values[9] || '', // Price max is in column 9
-      altcs_accepted: values[10] || '', // ALTCS accepted is in column 10
-      special_services: values[11] || '', // Special services is in column 11
-      notes: values[12] || '', // Notes is in column 12
-      date_added: values[13] || '', // Date added is in column 13
-      added_by: values[14] || '', // Added by is in column 14
+      name,
+      address: get(values, colAddress),
+      city: get(values, colCity),
+      zip: get(values, colZip),
+      phone: get(values, colPhone),
+      contact_person: get(values, colContact),
+      facility_type: get(values, colType),
+      available_beds: get(values, colBeds),
+      price_min: get(values, colPriceMin),
+      price_max: get(values, colPriceMax),
+      altcs_accepted: get(values, colAltcs),
+      special_services: get(values, colServices),
+      notes: get(values, colNotes),
+      date_added: get(values, colDateAdded),
+      added_by: get(values, colAddedBy),
     }
 
-    // Validate the facility data
     if (!validateFacility()) {
-      console.warn(`Skipping invalid facility at row ${i + 1}:`, rawFacility.name || 'Unknown')
+      console.warn(`Skipping invalid facility at row ${i + 1}:`, name)
       continue
     }
 
-    // Sanitize and add to facilities list
     const facility = sanitizeFacilityData(rawFacility)
+    if (lat !== undefined && lng !== undefined) {
+      facility.latitude = lat
+      facility.longitude = lng
+      facility.geocoded = true
+    }
     facilities.push(facility)
   }
-  
+
   return facilities
 }
 
@@ -220,61 +268,56 @@ function parseCSVLine(line: string): string[] {
   return result.map(val => val.replace(/"/g, ''))
 }
 
-// Geocode facilities using Google Maps Geocoding API
+// Geocode only the facilities missing coordinates. Facilities with Latitude/Longitude
+// already supplied (from the Sheet) pass through untouched — that's the fast path.
 async function geocodeFacilities(facilities: Facility[]): Promise<Facility[]> {
-  const geocodedFacilities: Facility[] = []
-  
+  const result: Facility[] = []
+  let geocodedCount = 0
+  let cachedCount = 0
+  let passthroughCount = 0
+  let fallbackCount = 0
+
   for (const facility of facilities) {
-    const fullAddress = `${facility.address}, ${facility.city}, AZ ${facility.zip}`.trim()
-    
-    // Check cache first
-    if (geocodeCache.has(fullAddress)) {
-      const cached = geocodeCache.get(fullAddress)!
-      geocodedFacilities.push({
-        ...facility,
-        latitude: cached.lat,
-        longitude: cached.lng,
-        geocoded: cached.geocoded
-      })
+    if (typeof facility.latitude === 'number' && typeof facility.longitude === 'number') {
+      result.push(facility)
+      passthroughCount++
       continue
     }
-    
+
+    const fullAddress = `${facility.address}, ${facility.city}, AZ ${facility.zip}`.trim()
+
+    if (geocodeCache.has(fullAddress)) {
+      const cached = geocodeCache.get(fullAddress)!
+      result.push({ ...facility, latitude: cached.lat, longitude: cached.lng, geocoded: cached.geocoded })
+      cachedCount++
+      continue
+    }
+
     try {
-      // Rate limiting
       const now = Date.now()
       if (now - lastGeocodingCall < GEOCODING_DELAY) {
         await new Promise(resolve => setTimeout(resolve, GEOCODING_DELAY - (now - lastGeocodingCall)))
       }
       lastGeocodingCall = Date.now()
-      
-      const coords = await geocodeAddress(fullAddress)
-      
-      // Cache the result
-      geocodeCache.set(fullAddress, coords)
-      
-      geocodedFacilities.push({
-        ...facility,
-        latitude: coords.lat,
-        longitude: coords.lng,
-        geocoded: coords.geocoded
-      })
-    } catch (error) {
-      console.warn(`Geocoding failed for ${facility.name} at ${fullAddress}, using fallback coordinates:`, error)
 
-      // Fallback to city-based coordinates
+      const coords = await geocodeAddress(fullAddress)
+      geocodeCache.set(fullAddress, coords)
+      result.push({ ...facility, latitude: coords.lat, longitude: coords.lng, geocoded: coords.geocoded })
+      geocodedCount++
+    } catch (error) {
+      console.warn(`Geocoding failed for ${facility.name} at ${fullAddress}, using fallback:`, error)
       const fallbackCoords = getFallbackCoordinates(facility.city, facility.zip)
       geocodeCache.set(fullAddress, fallbackCoords)
-
-      geocodedFacilities.push({
-        ...facility,
-        latitude: fallbackCoords.lat,
-        longitude: fallbackCoords.lng,
-        geocoded: fallbackCoords.geocoded
-      })
+      result.push({ ...facility, latitude: fallbackCoords.lat, longitude: fallbackCoords.lng, geocoded: fallbackCoords.geocoded })
+      fallbackCount++
     }
   }
-  
-  return geocodedFacilities
+
+  if (geocodedCount || cachedCount || fallbackCount) {
+    console.log(`[facilities] coords: ${passthroughCount} from sheet, ${cachedCount} cached, ${geocodedCount} freshly geocoded, ${fallbackCount} city-fallback`)
+  }
+
+  return result
 }
 
 // Use Google Maps Geocoding API

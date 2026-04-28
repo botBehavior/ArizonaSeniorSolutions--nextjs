@@ -3,13 +3,20 @@ declare namespace google {
     class Map {
       constructor(mapDiv: HTMLElement, opts?: MapOptions)
       panTo(latLng: LatLng | LatLngLiteral): void
-      fitBounds(bounds: LatLngBounds): void
+      fitBounds(bounds: LatLngBounds, padding?: number | { top: number; right: number; bottom: number; left: number }): void
+      setCenter(latLng: LatLng | LatLngLiteral): void
+      setZoom(zoom: number): void
+      getZoom(): number | undefined
     }
 
     class Marker {
       constructor(opts?: MarkerOptions)
       setMap(map: Map | null): void
       addListener(eventName: string, handler: () => void): void
+      setIcon(icon: string | Icon | Symbol): void
+      setZIndex(zIndex: number): void
+      setAnimation(animation: Animation | null): void
+      getTitle(): string | undefined
     }
 
     class LatLngBounds {
@@ -21,6 +28,7 @@ declare namespace google {
       constructor(opts?: InfoWindowOptions)
       open(map?: Map, anchor?: Marker): void
       close(): void
+      setContent(content: string | HTMLElement): void
     }
 
     interface Point {

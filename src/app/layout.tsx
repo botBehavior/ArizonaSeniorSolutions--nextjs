@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { NavigationProvider } from '@/contexts/NavigationContext'
@@ -9,6 +9,13 @@ export const metadata: Metadata = {
   title: 'Senior Care Solutions of AZ',
   description: 'Providing the best senior care solutions in Arizona with integrity, kindness, and respect.',
   keywords: 'Senior Care, Assisted Living, Memory Care, Independent Living, Arizona',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
