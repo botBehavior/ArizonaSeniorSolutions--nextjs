@@ -33,6 +33,9 @@ seed_import_*.csv
 /data/facilities.local.json
 .geocode-cache.json
 
+# Per-user Claude Code settings
+.claude/
+
 # Vercel
 .vercel
 

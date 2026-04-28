@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Phone, MapPin, Navigation, BedDouble } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -73,6 +73,13 @@ export default function FacilityCard({
   onAddToTour,
   isInTour = false
 }: FacilityCardProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isSelected || !wrapperRef.current) return
+    wrapperRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [isSelected])
+
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (facility.phone) window.open(`tel:${facility.phone}`, '_self')
@@ -94,6 +101,7 @@ export default function FacilityCard({
     (facility.date_added && facility.date_added !== '2025-09-10' && facility.date_added !== '2025-09-10 00:00:00')
 
   return (
+    <div ref={wrapperRef} className="scroll-mt-2">
     <Card
       className={`p-4 cursor-pointer transition-all duration-200 backdrop-blur-xl border shadow-xl ${
         isSelected
@@ -214,5 +222,6 @@ export default function FacilityCard({
         </div>
       )}
     </Card>
+    </div>
   )
 }
