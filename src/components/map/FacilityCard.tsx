@@ -76,8 +76,11 @@ export default function FacilityCard({
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!isSelected || !wrapperRef.current) return
-    wrapperRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    if (!isSelected) return
+    const raf = window.requestAnimationFrame(() => {
+      wrapperRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+    return () => window.cancelAnimationFrame(raf)
   }, [isSelected])
 
   const handleCall = (e: React.MouseEvent) => {

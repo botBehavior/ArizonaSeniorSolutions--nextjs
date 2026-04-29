@@ -270,6 +270,19 @@ export default function MapDashboard() {
     setVisibleLimit(50)
   }, [searchTerm, advancedFilters, clientCoords])
 
+  // Ensure the selected facility's card is mounted in the sidebar list
+  // (otherwise the in-card auto-scroll has nothing to scroll to). Round
+  // the bumped limit up to the next 50 so it's still a clean "Show more" step.
+  useEffect(() => {
+    if (!selectedFacility) return
+    const idx = filteredFacilities.findIndex((f) => f.id === selectedFacility.id)
+    if (idx === -1) return
+    if (idx >= visibleLimit) {
+      const next = Math.ceil((idx + 1) / 50) * 50
+      setVisibleLimit(next)
+    }
+  }, [selectedFacility, filteredFacilities, visibleLimit])
+
   const visibleFacilities = useMemo(
     () => filteredFacilities.slice(0, visibleLimit),
     [filteredFacilities, visibleLimit]
